@@ -232,7 +232,7 @@ form {
 
 .reservation-details {
   border: 1px solid #b6b6b6;
-  background-color: #ebf3f1;
+  background-color: #ebeaea;
   border-radius: 8px;
   padding: 10px;
   margin-top: 10px;
@@ -273,6 +273,7 @@ form {
 
 .pending-bill-details {
   border: 1px solid #ddd;
+  background-color: #ebeaea;
   border-radius: 8px;
   padding: 10px;
   margin-top: 10px;

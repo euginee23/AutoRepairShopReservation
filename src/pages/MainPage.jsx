@@ -618,6 +618,7 @@ const YourVehiclesContent = () => {
       const updatedVehicles = [...vehicles];
       updatedVehicles.splice(index, 1);
       setVehicles(updatedVehicles);
+      fetchUserVehicles();
       alert('Vehicle removed successfully!');
     } catch (error) {
       console.error('Error removing vehicle:', error.response.data);
