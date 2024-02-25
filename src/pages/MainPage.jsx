@@ -180,7 +180,6 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
 
   const handleUpdateProfile = async () => {
     try {
-      // Exclude oldPassword and newPassword from profile update
       const { oldPassword, newPassword, ...profileData } = editedUserData;
 
       const response = await axios.put(
@@ -248,134 +247,142 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
         </div>
       ) : userData ? (
         <div>
-          <h2>Edit Profile</h2>
-          <form>
-            <div>
-              <label>
-                First Name:
-                <input
-                  type="text"
-                  name="firstName"
-                  value={editedUserData.firstName}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
 
-            <div>
-              <label>
-                Middle Name (Optional):
-                <input
-                  type="text"
-                  name="middleName"
-                  value={editedUserData.middleName}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+          <div className="reservation-box">
+            <h2>Edit Profile</h2>
+            <form>
+              <div>
+                <label>
+                  First Name:
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={editedUserData.firstName}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
 
-            <div>
-              <label>
-                Last Name:
-                <input
-                  type="text"
-                  name="lastName"
-                  value={editedUserData.lastName}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+              <div>
+                <label>
+                  Middle Name (Optional):
+                  <input
+                    type="text"
+                    name="middleName"
+                    value={editedUserData.middleName}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
 
-            <div>
-              <label>
-                Email:
-                <input
-                  type="email"
-                  name="email"
-                  value={editedUserData.email}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+              <div>
+                <label>
+                  Last Name:
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={editedUserData.lastName}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
 
-            <div>
-              <label>
-                Contact Number:
-                <input
-                  type="tel"
-                  name="contactNumber"
-                  value={editedUserData.contactNumber}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
-          </form>
+              <div>
+                <label>
+                  Email:
+                  <input
+                    type="email"
+                    name="email"
+                    value={editedUserData.email}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
 
-          <h2>Your Address</h2>
-          <form>
-            <div>
-              <label>
-                Address:
-                <input
-                  type="text"
-                  name="address"
-                  value={editedUserData.address}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+              <div>
+                <label>
+                  Contact Number:
+                  <input
+                    type="tel"
+                    name="contactNumber"
+                    value={editedUserData.contactNumber}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
+            </form>
 
-            <div>
-              <button type="button" onClick={handleUpdateProfile}>
-                Update Profile
-              </button>
-            </div>
-          </form>
-          <h2>Edit Login Details</h2>
+            <h2>Your Address</h2>
+            <form>
+              <div>
+                <label>
+                  Address:
+                  <input
+                    type="text"
+                    name="address"
+                    value={editedUserData.address}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
 
-          <form>
-            <div>
-              <label>
-                Username:
-                <input
-                  type="text"
-                  name="username"
-                  value={editedUserData.username}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+              <div>
+                <button type="button" onClick={handleUpdateProfile}>
+                  Update Profile
+                </button>
+              </div>
+            </form>
+          </div>
 
-            <div>
-              <label>
-                Old Password:
-                <input
-                  type="password"
-                  name="oldPassword"
-                  value={editedUserData.oldPassword}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+          <div className="reservation-box">
 
-            <div>
-              <label>
-                New Password:
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={editedUserData.newPassword}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
+            <h2>Edit Login Details</h2>
 
-            <div>
-              <button type="button" onClick={handleChangeLogin}>
-                Change Password
-              </button>
-            </div>
-          </form>
+            <form>
+              <div>
+                <label>
+                  Username:
+                  <input
+                    type="text"
+                    name="username"
+                    value={editedUserData.username}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
+
+              <div>
+                <label>
+                  Old Password:
+                  <input
+                    type="password"
+                    name="oldPassword"
+                    value={editedUserData.oldPassword}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
+
+              <div>
+                <label>
+                  New Password:
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={editedUserData.newPassword}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
+
+              <div>
+                <button type="button" onClick={handleChangeLogin}>
+                  Change Password
+                </button>
+              </div>
+            </form>
+          </div>
+
         </div>
 
       ) : (
@@ -466,73 +473,75 @@ const BookReservationContent = () => {
 
   return (
     <div className="reservation-content">
-      <h2>Book a Reservation</h2>
-      <form>
-        <label>
-          Date:
-          <input
-            type="date"
-            name="date"
-            value={reservationData.date}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Time:
-          <input
-            type="time"
-            name="time"
-            value={reservationData.time}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Select Service:
-          <select
-            name="selectedServiceId"
-            value={reservationData.selectedServiceId}
-            onChange={handleChange}
-          >
-            <option value="" disabled>Select a service</option>
-            {services.map((service) => (
-              <option key={service.service_id} value={service.service_id}>
-                {service.serviceType}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Problem Description:
-          <textarea
-            name="problemDescription"
-            value={reservationData.problemDescription}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Select Vehicle:
-          <select
-            name="selectedVehicleId"
-            value={reservationData.selectedVehicleId}
-            onChange={handleChange}
-          >
-            <option value="" disabled>Select a vehicle</option>
-            {userVehicles.map((vehicle) => (
-              <option key={vehicle.vehicle_id} value={vehicle.vehicle_id}>
-                {`${vehicle.make} ${vehicle.model} (${vehicle.year}) - ${vehicle.plate_number}`}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="button" onClick={handleBookReservation}>
-          Book Reservation
-        </button>
-      </form>
+      <div className="reservation-box">
+        <h2>Book a Reservation</h2>
+        <form>
+          <label>
+            Date:
+            <input
+              type="date"
+              name="date"
+              value={reservationData.date}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Time:
+            <input
+              type="time"
+              name="time"
+              value={reservationData.time}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Select Service:
+            <select
+              name="selectedServiceId"
+              value={reservationData.selectedServiceId}
+              onChange={handleChange}
+            >
+              <option value="" disabled>Select a service</option>
+              {services.map((service) => (
+                <option key={service.service_id} value={service.service_id}>
+                  {service.serviceType}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Problem Description:
+            <textarea
+              name="problemDescription"
+              value={reservationData.problemDescription}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Select Vehicle:
+            <select
+              name="selectedVehicleId"
+              value={reservationData.selectedVehicleId}
+              onChange={handleChange}
+            >
+              <option value="" disabled>Select a vehicle</option>
+              {userVehicles.map((vehicle) => (
+                <option key={vehicle.vehicle_id} value={vehicle.vehicle_id}>
+                  {`${vehicle.make} ${vehicle.model} (${vehicle.year}) - ${vehicle.plate_number}`}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={handleBookReservation}>
+            Book Reservation
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
 
-// VEHICLE INFORMATION CONTENT
+//YOUR VEHICLES CONTENT
 const YourVehiclesContent = () => {
   const [vehicles, setVehicles] = useState([]);
   const [newVehicle, setNewVehicle] = useState({
@@ -540,7 +549,7 @@ const YourVehiclesContent = () => {
     model: '',
     year: '',
     mileage: '',
-    fuelType: 'petrol',
+    fuelType: 'Petrol',
     vehicleType: '',
     plateNumber: '',
   });
@@ -580,7 +589,7 @@ const YourVehiclesContent = () => {
         model: '',
         year: '',
         mileage: '',
-        fuelType: 'petrol',
+        fuelType: 'Petrol',
         vehicleType: '',
         plateNumber: '',
       });
@@ -589,6 +598,30 @@ const YourVehiclesContent = () => {
     } catch (error) {
       console.error('Error adding vehicle:', error.response.data);
       alert('An error occurred while adding the vehicle. Please try again.');
+    }
+  };
+
+  const handleRemoveVehicle = async (index) => {
+    const isConfirmed = window.confirm('Are you sure you want to remove this vehicle?');
+  
+    if (!isConfirmed) {
+      return;
+    }
+  
+    try {
+      await axios.delete(`http://localhost:3001/api/remove-vehicle/${index}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+  
+      const updatedVehicles = [...vehicles];
+      updatedVehicles.splice(index, 1);
+      setVehicles(updatedVehicles);
+      alert('Vehicle removed successfully!');
+    } catch (error) {
+      console.error('Error removing vehicle:', error.response.data);
+      alert('An error occurred while removing the vehicle. Please try again.');
     }
   };
 
@@ -615,117 +648,127 @@ const YourVehiclesContent = () => {
 
   return (
     <div className="vehicle-content">
-      <h2>Your Vehicles</h2>
-      <form>
-        <label>
-          Make:
-          <select
-            name="make"
-            value={newVehicle.make}
-            onChange={handleChange}
-          >
-            <option value="" disabled>Select a car brand</option>
-            {carBrands.map((brand, index) => (
-              <option key={index} value={brand}>
-                {brand}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Model:
-          <input
-            type="text"
-            name="model"
-            value={newVehicle.model}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Year:
-          <input
-            type="text"
-            name="year"
-            value={newVehicle.year}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Mileage:
-          <input
-            type="text"
-            name="mileage"
-            value={newVehicle.mileage}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Fuel Type:
-          <select
-            name="fuelType"
-            value={newVehicle.fuelType}
-            onChange={handleChange}
-          >
-            <option value="Petrol">Petrol</option>
-            <option value="Diesel">Diesel</option>
-          </select>
-        </label>
-        <label>
-          Vehicle Type:
-          <select
-            name="vehicleType"
-            value={newVehicle.vehicleType}
-            onChange={handleChange}
-          >
-            <option value="" disabled>Select a vehicle type</option>
-            <option value="Sedan">Sedan</option>
-            <option value="Hatchback">Hatchback</option>
-            <option value="SUV">SUV</option>
-            <option value="Crossover">Crossover</option>
-            <option value="Commercial Truck">Commercial Truck</option>
-            <option value="Commercial Van">Commercial Van</option>
-            <option value="Passenger Van">Passenger Van</option>
-            <option value="Jeep">Jeep</option>
-          </select>
-        </label>
-        <label>
-          Plate Number:
-          <input
-            type="text"
-            name="plateNumber"
-            value={newVehicle.plateNumber}
-            onChange={handleChange}
-          />
-        </label>
-        <button type="button" onClick={handleAddVehicle}>
-          Add Vehicle
-        </button>
-      </form>
-
-      <form className='vehicle_list'>
-        {vehicles.length > 0 ? (
-          <div>
-            <h3>Your Vehicles List:</h3>
-            <ul>
-              {vehicles.map((vehicle, index) => (
-                <li key={index}>
-                  {vehicle.make} {vehicle.model} ({vehicle.year})
-                  <br />
-                  Mileage: {vehicle.mileage} km
-                  <br />
-                  Fuel Type: {vehicle.fuel_type}
-                  <br />
-                  Vehicle Type: {vehicle.vehicle_type}
-                  <br />
-                  Plate Number: {vehicle.plate_number}
-                </li>
+      <div className="reservation-box">
+        <h2>Your Vehicles</h2>
+        <form>
+          <label>
+            Make:
+            <select
+              name="make"
+              value={newVehicle.make}
+              onChange={handleChange}
+            >
+              <option value="" disabled>Select a car brand</option>
+              {carBrands.map((brand, index) => (
+                <option key={index} value={brand}>
+                  {brand}
+                </option>
               ))}
-            </ul>
-          </div>
-        ) : (
-          <p>No vehicles added yet.</p>
-        )}
-      </form>
+            </select>
+          </label>
+          <label>
+            Model:
+            <input
+              type="text"
+              name="model"
+              value={newVehicle.model}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Year:
+            <input
+              type="text"
+              name="year"
+              value={newVehicle.year}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Mileage:
+            <input
+              type="text"
+              name="mileage"
+              value={newVehicle.mileage}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Fuel Type:
+            <select
+              name="fuelType"
+              value={newVehicle.fuelType}
+              onChange={handleChange}
+            >
+              <option value="Petrol">Petrol</option>
+              <option value="Diesel">Diesel</option>
+            </select>
+          </label>
+          <label>
+            Vehicle Type:
+            <select
+              name="vehicleType"
+              value={newVehicle.vehicleType}
+              onChange={handleChange}
+            >
+              <option value="" disabled>Select a vehicle type</option>
+              <option value="Sedan">Sedan</option>
+              <option value="Hatchback">Hatchback</option>
+              <option value="SUV">SUV</option>
+              <option value="Crossover">Crossover</option>
+              <option value="Commercial Truck">Commercial Truck</option>
+              <option value="Commercial Van">Commercial Van</option>
+              <option value="Passenger Van">Passenger Van</option>
+              <option value="Jeep">Jeep</option>
+            </select>
+          </label>
+          <label>
+            Plate Number:
+            <input
+              type="text"
+              name="plateNumber"
+              value={newVehicle.plateNumber}
+              onChange={handleChange}
+            />
+          </label>
+          <button type="button" onClick={handleAddVehicle}>
+            Add Vehicle
+          </button>
+        </form>
+      </div>
+
+      <div className="reservation-box">
+        <div className="vehicle-list-table">
+          <form className='vehicle_list'>
+            {vehicles.length > 0 ? (
+              <div>
+                <h3>Your Vehicles List:</h3>
+                <ul>
+                  {vehicles.map((vehicle) => (
+                    <li key={`${vehicle.make}-${vehicle.model}-${vehicle.year}`}>
+                      {vehicle.make} {vehicle.model} ({vehicle.year})
+                      <br />
+                      Mileage: {vehicle.mileage} km
+                      <br />
+                      Fuel Type: {vehicle.fuel_type}
+                      <br />
+                      Vehicle Type: {vehicle.vehicle_type}
+                      <br />
+                      Plate Number: {vehicle.plate_number}
+                      <br />
+                      <button type="button" onClick={() => handleRemoveVehicle(vehicle.vehicle_id)}>
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p>No vehicles added yet.</p>
+            )}
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

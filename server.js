@@ -274,6 +274,26 @@ app.post('/api/add-vehicle', verifyToken, (req, res) => {
     });
 });
 
+// REMOVING USER VEHICLE
+app.delete('/api/remove-vehicle/:vehicleId', verifyToken, (req, res) => {
+    const userId = req.userId;
+    const vehicleId = req.params.vehicleId;
+
+    const deleteVehicleQuery = `
+        DELETE FROM customer_vehicles
+        WHERE vehicle_id = ? AND customer_id = ?
+    `;
+
+    db.query(deleteVehicleQuery, [vehicleId, userId], (error, results) => {
+        if (error) {
+            console.error('Error removing vehicle:', error.message);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.status(200).json({ message: 'Vehicle removed successfully' });
+        }
+    });
+});
+
 // RETRIEVING VEHICLES BASED ON USER
 app.get('/api/user-vehicles', verifyToken, (req, res) => {
     const { userId } = req;

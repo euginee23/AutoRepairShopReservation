@@ -93,7 +93,7 @@ form {
 .profile-content select,
 .reservation-content select,
 .vehicle-content select {
-  width: 100%;
+  width: 94%;
   padding: 10px;
   margin-bottom: 10px;
   border: 1px solid #ddd;
@@ -117,6 +117,15 @@ form {
   background-color: #45a049;
 }
 
+.reservation-content textarea{
+  width: 98%;
+  height: 200px;
+}
+
+.reservation-content select {
+  width: 99%;
+}
+
 .vehicle-content ul {
   list-style: none;
   margin-top: 10px;
@@ -124,6 +133,48 @@ form {
 
 .vehicle-content li {
   margin-bottom: 20px;
+}
+
+.vehicle-content select{
+  width: 98.5%;
+}
+
+/* Add these styles to your existing stylesheet or create a new one */
+
+.vehicle-list-table {
+  margin-top: 20px;
+}
+
+.vehicle_list {
+  list-style: none;
+  padding: 0;
+}
+
+.vehicle_list li {
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  padding: 10px;
+  position: relative;
+}
+
+.vehicle_list li button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #e74c3c; 
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.vehicle_list li button:hover {
+  background-color: #c0392b; 
+}
+
+.vehicle_list p {
+  margin: 10px 0;
+  color: #777;
 }
 
 .home-content {
@@ -154,13 +205,11 @@ form {
   margin: 0;
 }
 
-/* Loading message style */
 .home-content p.loading-message {
   font-style: italic;
   color: #777;
 }
 
-/* No data message style */
 .home-content p.no-data-message {
   color: #777;
 }
