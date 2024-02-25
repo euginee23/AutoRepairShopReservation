@@ -1,0 +1,277 @@
+body,
+h1,
+h2,
+h3,
+p,
+ul,
+li {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f4f4;
+}
+
+.sidebar {
+  background-color: #333;
+  padding: 20px;
+  color: white;
+  box-sizing: border-box;
+  position: fixed;
+  height: 100%;
+  overflow-y: auto;
+  width: 200px;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+}
+
+.tab {
+  cursor: pointer;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.tab:hover {
+  background-color: #555;
+}
+
+.tab.active {
+  background-color: #777;
+}
+
+/* Content area styling */
+.profile-content,
+.reservation-content,
+.vehicle-content,
+.home-content {
+  padding: 30px;
+  box-sizing: border-box;
+  margin-left: 200px;
+}
+
+/* Button styling */
+.button {
+  background-color: #4caf50;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.button:hover {
+  background-color: #45a049;
+}
+
+form {
+  margin-bottom: 50px;
+}
+
+.profile-content form,
+.reservation-content form,
+.vehicle-content form {
+  margin-top: 20px;
+}
+
+.profile-content label,
+.reservation-content label,
+.vehicle-content label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.profile-content input,
+.reservation-content input,
+.vehicle-content input,
+.profile-content select,
+.reservation-content select,
+.vehicle-content select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.profile-content button,
+.reservation-content button,
+.vehicle-content button {
+  background-color: #4caf50;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.profile-content button:hover,
+.reservation-content button:hover,
+.vehicle-content button:hover {
+  background-color: #45a049;
+}
+
+.vehicle-content ul {
+  list-style: none;
+  margin-top: 10px;
+}
+
+.vehicle-content li {
+  margin-bottom: 20px;
+}
+
+.home-content {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.home-content h2 {
+  margin-bottom: 15px;
+  font-size: 24px;
+  color: #333;
+}
+
+.home-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.home-content li {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.home-content p {
+  margin: 0;
+}
+
+/* Loading message style */
+.home-content p.loading-message {
+  font-style: italic;
+  color: #777;
+}
+
+/* No data message style */
+.home-content p.no-data-message {
+  color: #777;
+}
+
+.reservation-box-title {
+  text-align: center;
+}
+
+.reservation-box {
+  flex: 1;
+  margin: 5px;
+  max-width: 600px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reservation-details {
+  border: 1px solid #b6b6b6;
+  background-color: #ebf3f1;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.reservation-details>p {
+  margin-bottom: 10px;
+}
+
+.info-label {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin-right: 20px;
+  font-size: large;
+  font-weight: bold;
+}
+
+.info-value {
+  font-size: large;
+  color: #333;
+}
+
+.pending-bill-title {
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+.payment-bill-history-box {
+  flex: 1;
+  margin: 5px;
+  max-width: 600px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pending-bill-details {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.pending-bill-details>p {
+  flex: 1;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.pending-bill-details .info-label {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.pending-bill-details .info-value {
+  font-weight: normal;
+}
+
+.pending-bill-details img {
+  max-width: 100%;
+  align-self: flex-start;
+  margin-top: 10px;
+}
+
+
+
+/* Responsive adjustments */
+@media screen and (max-width: 600px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+  }
+
+  .profile-content,
+  .reservation-content,
+  .vehicle-content,
+  .home-content {
+    margin-left: 0;
+  }
+
+  .home-content {
+    margin-left: 0;
+  }
+
+  .reservation-box {
+    margin-right: 0;
+  }
+}
