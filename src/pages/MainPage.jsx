@@ -3,6 +3,7 @@ import '../css/MainPageStyle.css';
 import apiUrl from '../../apiUrl';
 import axios from 'axios';
 
+//HOME
 const HomeContent = () => {
   const [userReservations, setUserReservations] = useState([]);
   const [approvedReservations, setApprovedReservations] = useState([]);
