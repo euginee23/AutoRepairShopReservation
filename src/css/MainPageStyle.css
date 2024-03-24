@@ -45,17 +45,16 @@ body {
   background-color: #777;
 }
 
-/* Content area styling */
 .profile-content,
 .reservation-content,
 .vehicle-content,
 .home-content {
+  margin: auto;
   padding: 30px;
   box-sizing: border-box;
   margin-left: 200px;
 }
 
-/* Button styling */
 .button {
   background-color: #4caf50;
   color: #fff;
@@ -219,8 +218,6 @@ form {
 }
 
 .reservation-box {
-  flex: 1;
-  margin: 5px;
   max-width: 600px;
   border: 1px solid #ddd;
   border-radius: 8px;
