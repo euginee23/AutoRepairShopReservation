@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import '../css/LoginStyle.css';
+import apiUrl from '../../apiUrl';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ const Login = () => {
     e.preventDefault();
   
     try {
-      const response = await axios.post('http://localhost:3001/api/login', formData);
+      const response = await axios.post(`${apiUrl}/api/login`, formData);
       const { token } = response.data;
       localStorage.setItem('token', token);
       alert('Login successful!');

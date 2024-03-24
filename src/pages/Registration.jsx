@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import registrationValidationSchema from '../validation/registrationValidation';
 import '../css/RegistrationStyle.css';
+import apiUrl from '../../apiUrl';
 
 const Registration = () => {
     const [formData, setFormData] = useState({
@@ -44,7 +45,7 @@ const Registration = () => {
         try {
             await registrationValidationSchema.validate(formData, { abortEarly: false });
 
-            const response = await axios.post('http://localhost:3001/api/register', formData);
+            const response = await axios.post(`${apiUrl}/api/register`, formData);
             console.log('Registration successful:', response.data);
             alert('Registration successful!');
             navigate('/');

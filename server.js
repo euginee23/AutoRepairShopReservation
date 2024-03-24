@@ -38,11 +38,20 @@ app.post('/api/login', (req, res) => {
     const sql = 'SELECT customer_id, username FROM customer_info WHERE username = ? AND password = ?';
     const values = [username, password];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            console.error('Login failed:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
+    db.getConnection((err, connection) => {
+        if (err) {
+            console.error('Error getting connection:', err.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        connection.query(sql, values, (error, results) => {
+            connection.release(); 
+
+            if (error) {
+                console.error('Login failed:', error.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+
             const user = results[0];
 
             if (!user) {
@@ -54,7 +63,7 @@ app.post('/api/login', (req, res) => {
             });
 
             res.status(200).json({ token });
-        }
+        });
     });
 });
 
@@ -78,16 +87,26 @@ app.post('/api/register', (req, res) => {
 
     const values = [firstName, middleName, lastName, email, contactNumber, username, password];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            console.error('Registration failed:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
+    db.getConnection((err, connection) => {
+        if (err) {
+            console.error('Error getting connection:', err.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        connection.query(sql, values, (error, results) => {
+            connection.release(); 
+
+            if (error) {
+                console.error('Registration failed:', error.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+
             console.log('Registration successful:', results);
             res.status(201).json({ message: 'Registration successful' });
-        }
+        });
     });
 });
+
 
 // RETRIEVE USER INFORMATION BASED ON THE PROVIDED TOKEN
 app.get('/api/user', (req, res) => {
@@ -104,11 +123,21 @@ app.get('/api/user', (req, res) => {
         const { userId, username } = decoded;
 
         const sql = 'SELECT * FROM customer_info WHERE customer_id = ?';
-        db.query(sql, [userId], (error, results) => {
-            if (error || results.length === 0) {
-                console.error('Error fetching user information:', error ? error.message : 'User not found');
-                res.status(500).json({ error: 'Internal Server Error' });
-            } else {
+        
+        db.getConnection((err, connection) => {
+            if (err) {
+                console.error('Error getting connection:', err.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+
+            connection.query(sql, [userId], (error, results) => {
+                connection.release(); 
+
+                if (error || results.length === 0) {
+                    console.error('Error fetching user information:', error ? error.message : 'User not found');
+                    return res.status(500).json({ error: 'Internal Server Error' });
+                }
+
                 const user = results[0];
                 res.status(200).json({
                     userId,
@@ -121,7 +150,7 @@ app.get('/api/user', (req, res) => {
                     email: user.email,
                     contactNumber: user.contactNumber
                 });
-            }
+            });
         });
     } catch (error) {
         console.error('Error decoding token:', error.message);
@@ -156,15 +185,25 @@ app.put('/api/update-profile', verifyToken, (req, res) => {
         userId,
     ];
 
-    db.query(updateProfileQuery, updateProfileValues, (updateError, updateResult) => {
-        if (updateError) {
-            console.error('Error updating profile:', updateError.message);
+    db.getConnection((err, connection) => {
+        if (err) {
+            console.error('Error getting connection:', err.message);
             return res.status(500).json({ error: 'Internal Server Error' });
         }
 
-        res.status(200).json({ message: 'Profile updated successfully' });
+        connection.query(updateProfileQuery, updateProfileValues, (updateError, updateResult) => {
+            connection.release(); 
+
+            if (updateError) {
+                console.error('Error updating profile:', updateError.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+
+            res.status(200).json({ message: 'Profile updated successfully' });
+        });
     });
 });
+
 
 // EDITING / UPDATING USER LOGIN DETAILS
 app.put('/api/change-login', verifyToken, (req, res) => {
@@ -172,9 +211,9 @@ app.put('/api/change-login', verifyToken, (req, res) => {
     const userId = req.userId;
 
     const validatePasswordQuery = `
-      SELECT customer_id
-      FROM customer_info
-      WHERE customer_id = ? AND password = ?;
+        SELECT customer_id
+        FROM customer_info
+        WHERE customer_id = ? AND password = ?;
     `;
 
     db.query(validatePasswordQuery, [userId, oldPassword], (validateError, validateResult) => {
@@ -189,49 +228,88 @@ app.put('/api/change-login', verifyToken, (req, res) => {
 
         const updates = [];
 
-        if (newUsername) {
-            const updateUsernameQuery = `
-          UPDATE customer_info
-          SET username = ?
-          WHERE customer_id = ?;
-        `;
-            updates.push(db.query(updateUsernameQuery, [newUsername, userId]));
-        }
+        db.getConnection((getConnectionError, connection) => {
+            if (getConnectionError) {
+                console.error('Error getting connection:', getConnectionError.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
 
-        if (newPassword) {
-            const updatePasswordQuery = `
-          UPDATE customer_info
-          SET password = ?
-          WHERE customer_id = ?;
-        `;
-            updates.push(db.query(updatePasswordQuery, [newPassword, userId]));
-        }
+            if (newUsername) {
+                const updateUsernameQuery = `
+                    UPDATE customer_info
+                    SET username = ?
+                    WHERE customer_id = ?;
+                `;
+                updates.push(
+                    new Promise((resolve, reject) => {
+                        connection.query(updateUsernameQuery, [newUsername, userId], (updateUsernameError, updateUsernameResult) => {
+                            if (updateUsernameError) {
+                                reject(updateUsernameError);
+                            } else {
+                                resolve(updateUsernameResult);
+                            }
+                        });
+                    })
+                );
+            }
 
-        Promise.all(updates)
-            .then(() => {
-                res.status(200).json({ message: 'Login details changed successfully' });
-            })
-            .catch((updateError) => {
-                console.error('Error changing login details:', updateError.message);
-                res.status(500).json({ error: 'Internal Server Error' });
-            });
+            if (newPassword) {
+                const updatePasswordQuery = `
+                    UPDATE customer_info
+                    SET password = ?
+                    WHERE customer_id = ?;
+                `;
+                updates.push(
+                    new Promise((resolve, reject) => {
+                        connection.query(updatePasswordQuery, [newPassword, userId], (updatePasswordError, updatePasswordResult) => {
+                            if (updatePasswordError) {
+                                reject(updatePasswordError);
+                            } else {
+                                resolve(updatePasswordResult);
+                            }
+                        });
+                    })
+                );
+            }
+
+            Promise.all(updates)
+                .then(() => {
+                    connection.release();
+                    res.status(200).json({ message: 'Login details changed successfully' });
+                })
+                .catch((updateError) => {
+                    console.error('Error changing login details:', updateError.message);
+                    res.status(500).json({ error: 'Internal Server Error' });
+                });
+        });
     });
 });
+
 
 // RETRIEVE CUSTOMERS
 app.get('/api/customers', (req, res) => {
     const sql = 'SELECT * FROM customer_info';
 
-    db.query(sql, (error, results) => {
-        if (error) {
-            console.error('Failed to retrieve customers_info:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            console.log('Customers_info retrieved successfully:', results);
-            res.status(200).json(results);
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Failed to retrieve customers_info:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                console.log('Customers_info retrieved successfully:', results);
+                res.status(200).json(results);
+            }
+        });
     });
 });
+
 
 // ADDING A VEHICLE
 app.post('/api/add-vehicle', verifyToken, (req, res) => {
@@ -247,14 +325,11 @@ app.post('/api/add-vehicle', verifyToken, (req, res) => {
     } = req.body;
 
     if (
-        make.trim() === '' ||
-        model.trim() === '' ||
-        year.trim() === '' ||
-        mileage.trim() === '' ||
-        vehicleType.trim() === '' ||
-        plateNumber.trim() === ''
+        !make || !model || !year || !mileage || !fuelType || !vehicleType || !plateNumber ||
+        make.trim() === '' || model.trim() === '' || year.trim() === '' || mileage.trim() === '' ||
+        vehicleType.trim() === '' || plateNumber.trim() === ''
     ) {
-        return res.status(400).json({ error: 'Please fill in all required fields before adding a new vehicle.' });
+        return res.status(400).json({ error: 'Please provide all required fields before adding a new vehicle.' });
     }
 
     const sql = `
@@ -264,15 +339,26 @@ app.post('/api/add-vehicle', verifyToken, (req, res) => {
     `;
     const values = [userId, make, model, year, mileage, fuelType, vehicleType, plateNumber];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            console.error('Error adding a new vehicle:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            res.status(201).json({ message: 'New vehicle added successfully' });
+    // Acquire a connection from the pool
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, values, (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error adding a new vehicle:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                res.status(201).json({ message: 'New vehicle added successfully' });
+            }
+        });
     });
 });
+
 
 // REMOVING USER VEHICLE
 app.delete('/api/remove-vehicle/:vehicleId', verifyToken, (req, res) => {
@@ -284,15 +370,25 @@ app.delete('/api/remove-vehicle/:vehicleId', verifyToken, (req, res) => {
         WHERE vehicle_id = ? AND customer_id = ?
     `;
 
-    db.query(deleteVehicleQuery, [vehicleId, userId], (error, results) => {
-        if (error) {
-            console.error('Error removing vehicle:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            res.status(200).json({ message: 'Vehicle removed successfully' });
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(deleteVehicleQuery, [vehicleId, userId], (queryError, results) => {
+            connection.release();
+
+            if (queryError) {
+                console.error('Error removing vehicle:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                res.status(200).json({ message: 'Vehicle removed successfully' });
+            }
+        });
     });
 });
+
 
 // RETRIEVING VEHICLES BASED ON USER
 app.get('/api/user-vehicles', verifyToken, (req, res) => {
@@ -300,51 +396,89 @@ app.get('/api/user-vehicles', verifyToken, (req, res) => {
 
     const sql = 'SELECT * FROM customer_vehicles WHERE customer_id = ?';
 
-    db.query(sql, [userId], (error, results) => {
-        if (error) {
-            console.error('Error fetching user vehicles:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            console.log('User vehicles retrieved successfully:', results);
-            res.status(200).json(results);
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, [userId], (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error fetching user vehicles:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                console.log('User vehicles retrieved successfully:', results);
+                res.status(200).json(results);
+            }
+        });
     });
 });
+
 
 // RETRIEVE SERVICES
 app.get('/api/services', (req, res) => {
     const sql = 'SELECT * FROM services';
 
-    db.query(sql, (error, results) => {
-        if (error) {
-            console.error('Error fetching services:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            res.status(200).json(results);
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error fetching services:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                res.status(200).json(results);
+            }
+        });
     });
 });
 
+
 // BOOKING A RESERVATION
-app.post('/api/book-reservation', verifyToken, async (req, res) => {
+app.post('/api/book-reservation', verifyToken, (req, res) => {
     try {
         const { date, time, selectedServiceId, problemDescription, selectedVehicleId } = req.body;
         const customerId = req.userId;
         const reservationQuery = `
-      INSERT INTO reservations (customer_id, service_id, vehicle_id, problem_description, date, time)
-      VALUES (?, ?, ?, ?, ?, ?);
-    `;
+            INSERT INTO reservations (customer_id, service_id, vehicle_id, problem_description, date, time)
+            VALUES (?, ?, ?, ?, ?, ?);
+        `;
 
-        const reservationResult = db.query(
-            reservationQuery,
-            [customerId, selectedServiceId, selectedVehicleId, problemDescription, date, time]);
+        // Acquire a connection from the pool
+        db.getConnection((getConnectionError, connection) => {
+            if (getConnectionError) {
+                console.error('Error getting connection:', getConnectionError.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
 
-        res.status(200).json({ message: 'Reservation booked successfully' });
+            connection.query(
+                reservationQuery,
+                [customerId, selectedServiceId, selectedVehicleId, problemDescription, date, time],
+                (queryError, results) => {
+                    connection.release(); 
+
+                    if (queryError) {
+                        console.error('Error booking reservation:', queryError.message);
+                        res.status(500).json({ error: 'Internal Server Error' });
+                    } else {
+                        res.status(200).json({ message: 'Reservation booked successfully' });
+                    }
+                }
+            );
+        });
     } catch (error) {
         console.error('Error booking reservation:', error.message);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 // RETRIEVING USER RESERVATIONS
 app.get('/api/user-reservations', verifyToken, (req, res) => {
@@ -365,16 +499,27 @@ app.get('/api/user-reservations', verifyToken, (req, res) => {
         ORDER BY reservations.date DESC;
     `;
 
-    db.query(sql, [userId], (error, results) => {
-        if (error) {
-            console.error('Error fetching user reservations:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            console.log('User reservations retrieved successfully:', results);
-            res.status(200).json(results);
+    // Acquire a connection from the pool
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, [userId], (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error fetching user reservations:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                console.log('User reservations retrieved successfully:', results);
+                res.status(200).json(results);
+            }
+        });
     });
 });
+
 
 // RETRIEVING USER APPROVED RESERVATIONS
 app.get('/api/user-approved-reservations', verifyToken, (req, res) => {
@@ -395,16 +540,27 @@ app.get('/api/user-approved-reservations', verifyToken, (req, res) => {
         ORDER BY reservations.date DESC;
     `;
 
-    db.query(sql, [userId], (error, results) => {
-        if (error) {
-            console.error('Error fetching user approved reservations:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            console.log('User approved reservations retrieved successfully:', results);
-            res.status(200).json(results);
+    // Acquire a connection from the pool
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, [userId], (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error fetching user approved reservations:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                console.log('User approved reservations retrieved successfully:', results);
+                res.status(200).json(results);
+            }
+        });
     });
 });
+
 
 // RETRIEVING VEHICLES BASED ON APPROVED RESERVATIONS
 app.get('/api/vehicles-on-approved-reservations', verifyToken, (req, res) => {
@@ -417,14 +573,24 @@ app.get('/api/vehicles-on-approved-reservations', verifyToken, (req, res) => {
         WHERE reservations.customer_id = ? AND reservations.status = 'Approved'
     `;
 
-    db.query(sql, [userId], (error, results) => {
-        if (error) {
-            console.error('Error fetching vehicles on approved reservations:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            console.log('Vehicles on approved reservations retrieved successfully:', results);
-            res.status(200).json(results);
+    // Acquire a connection from the pool
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, [userId], (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error fetching vehicles on approved reservations:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                console.log('Vehicles on approved reservations retrieved successfully:', results);
+                res.status(200).json(results);
+            }
+        });
     });
 });
 
@@ -441,16 +607,28 @@ app.get('/api/pending-bills', verifyToken, (req, res) => {
         WHERE r.customer_id = ? AND r.status = 'Done';
     `;
 
-    db.query(sql, [userId], (error, results) => {
-        if (error) {
-            console.error('Error fetching pending bills:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            res.status(200).json(results);
+    // Acquire a connection from the pool
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, [userId], (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error fetching pending bills:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                res.status(200).json(results);
+            }
+        });
     });
 });
 
+
+// RETRIEVE PAYMENT HISTORY
 app.get('/api/payment-history', verifyToken, (req, res) => {
     const userId = req.userId;
 
@@ -464,22 +642,33 @@ app.get('/api/payment-history', verifyToken, (req, res) => {
         WHERE r.customer_id = ? AND r.status = 'Completed';
     `;
 
-    db.query(sql, [userId], (error, results) => {
-        if (error) {
-            console.error('Error fetching payment history:', error.message);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            const paymentHistoryWithBase64 = results.map((history) => {
-                return {
-                    ...history,
-                    receipt_Image: history.receipt_Image.toString('base64'),
-                };
-            });
-
-            res.status(200).json(paymentHistoryWithBase64);
+    // Acquire a connection from the pool
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        connection.query(sql, [userId], (queryError, results) => {
+            connection.release(); 
+
+            if (queryError) {
+                console.error('Error fetching payment history:', queryError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            } else {
+                const paymentHistoryWithBase64 = results.map((history) => {
+                    return {
+                        ...history,
+                        receipt_Image: history.receipt_Image.toString('base64'),
+                    };
+                });
+
+                res.status(200).json(paymentHistoryWithBase64);
+            }
+        });
     });
 });
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

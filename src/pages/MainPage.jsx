@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../css/MainPageStyle.css';
+import apiUrl from '../../apiUrl';
 import axios from 'axios';
 
 const HomeContent = () => {
@@ -11,7 +12,7 @@ const HomeContent = () => {
   useEffect(() => {
     const fetchUserReservations = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/user-reservations', {
+        const response = await axios.get(`${apiUrl}/api/user-reservations`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
@@ -25,7 +26,7 @@ const HomeContent = () => {
 
     const fetchApprovedReservations = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/user-approved-reservations', {
+        const response = await axios.get(`${apiUrl}/api/user-approved-reservations`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
@@ -39,7 +40,7 @@ const HomeContent = () => {
 
     const fetchVehiclesOnApprovedReservations = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/vehicles-on-approved-reservations', {
+        const response = await axios.get(`${apiUrl}/api/vehicles-on-approved-reservations`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
@@ -183,7 +184,7 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
       const { oldPassword, newPassword, ...profileData } = editedUserData;
 
       const response = await axios.put(
-        'http://localhost:3001/api/update-profile',
+        `${apiUrl}/api/update-profile`,
         profileData,
         {
           headers: {
@@ -215,7 +216,7 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
       };
 
       const response = await axios.put(
-        'http://localhost:3001/api/change-login',
+        `${apiUrl}/api/change-login`,
         loginData,
         {
           headers: {
@@ -417,7 +418,7 @@ const BookReservationContent = () => {
   const handleBookReservation = async () => {
     try {
       const response = await axios.post(
-        'http://localhost:3001/api/book-reservation',
+        `${apiUrl}/api/book-reservation`,
         reservationData,
         {
           headers: {
@@ -443,7 +444,7 @@ const BookReservationContent = () => {
 
   const fetchUserVehicles = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/user-vehicles', {
+      const response = await axios.get(`${apiUrl}/api/user-vehicles`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -458,7 +459,7 @@ const BookReservationContent = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/services');
+      const response = await axios.get(`${apiUrl}/api/services`);
       setServices(response.data);
     } catch (error) {
       console.error('Error fetching services:', error.message);
@@ -576,7 +577,7 @@ const YourVehiclesContent = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3001/api/add-vehicle', newVehicle, {
+      const response = await axios.post(`${apiUrl}/api/add-vehicle`, newVehicle, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -609,7 +610,7 @@ const YourVehiclesContent = () => {
     }
   
     try {
-      await axios.delete(`http://localhost:3001/api/remove-vehicle/${index}`, {
+      await axios.delete(`${apiUrl}/api/remove-vehicle/${index}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -630,7 +631,7 @@ const YourVehiclesContent = () => {
 
   const fetchUserVehicles = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/user-vehicles', {
+      const response = await axios.get(`${apiUrl}/api/user-vehicles`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -784,7 +785,7 @@ const BillsPaymentContent = () => {
   useEffect(() => {
     const fetchPendingBills = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/pending-bills', {
+        const response = await axios.get(`${apiUrl}/api/pending-bills`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
@@ -800,7 +801,7 @@ const BillsPaymentContent = () => {
 
     const fetchPaymentHistory = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/payment-history', {
+        const response = await axios.get(`${apiUrl}/api/payment-history`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
@@ -901,7 +902,7 @@ const MainPage = () => {
         const token = localStorage.getItem('token');
 
         if (token) {
-          const response = await axios.get('http://localhost:3001/api/user', {
+          const response = await axios.get(`${apiUrl}/api/user`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
