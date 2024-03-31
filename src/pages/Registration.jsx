@@ -18,6 +18,7 @@ const Registration = () => {
     });
 
     const [errors, setErrors] = useState({});
+    const [backendError, setBackendError] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -48,9 +49,10 @@ const Registration = () => {
             const response = await axios.post(`${apiUrl}/api/register`, formData);
             console.log('Registration successful:', response.data);
             alert('Registration successful!');
-            navigate('/');
         } catch (error) {
-            if (error.name === 'ValidationError') {
+            if (error.response && error.response.status === 400) {
+                setBackendError(error.response.data.error);
+            } else if (error.name === 'ValidationError') {
                 const newErrors = {};
                 error.inner.forEach((e) => {
                     newErrors[e.path] = e.message;
@@ -67,6 +69,8 @@ const Registration = () => {
             <form className="registration-form" onSubmit={handleSubmit}>
                 <h2 className="registration-heading">Fill up Registration Form!</h2>
                 <h6 className="registration-subHeading">It's fast and easy.</h6>
+
+                {backendError && <div className="registration-error">{backendError}</div>}
 
                 <div className={`registration-input-container ${formData.firstName ? 'active' : ''}`}>
                     <label className="registration-label">First Name:</label>

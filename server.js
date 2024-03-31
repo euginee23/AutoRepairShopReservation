@@ -3,13 +3,125 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const db = require('./db');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const randomize = require('randomatic');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const SECRET_KEY = 'yourSecretKey';
+
+// NoODEMAILER CONFIG
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'molaveengineering@gmail.com',
+        pass: 'pser ukpk azel cafx', 
+    },
+});
+
+// SENDING A 6-DIGIT CODE
+app.post('/api/send-code', (req, res) => {
+    const { email } = req.body;
+    const code = randomize('0', 6);
+
+    const emailCheckQuery = 'SELECT * FROM customer_info WHERE email = ?';
+    db.query(emailCheckQuery, [email], async (err, results) => {
+        if (err) {
+            console.error('Error checking email:', err.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(400).json({ error: 'There is no account registered with the entered Email. Please enter a valid Email.' });
+        }
+
+        const mailOptions = {
+            from: 'MOLAVE ENGINEERING',
+            to: email,
+            subject: 'Password Reset Code',
+            text: `Your verification code is: ${code}`,
+        };
+
+        transporter.sendMail(mailOptions, async (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+                return res.status(500).json({ error: 'Failed to send code. Please try again later.' });
+            }
+
+            console.log('Email sent:', info.response);
+
+            try {
+                const sql = 'UPDATE customer_info SET verification_code = ? WHERE email = ?';
+                await db.query(sql, [code, email]);
+                console.log('Verification code stored in the database:', code);
+                res.status(200).json({ message: 'Code sent successfully.', code });
+            } catch (updateError) {
+                console.error('Error storing verification code:', updateError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+    });
+});
+
+
+// VERIFYING THE CODE SENT
+app.post('/api/verify-code', (req, res) => {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+        return res.status(400).json({ error: 'Email and code are required.' });
+    }
+    const sql = 'SELECT * FROM customer_info WHERE email = ? AND verification_code = ?';
+    db.query(sql, [email, code], (err, results) => {
+        if (err) {
+            console.error('Error verifying code:', err.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(400).json({ error: 'Invalid verification code. Please try again.' });
+        }
+
+        res.status(200).json({ message: 'Verification code is valid.' });
+    });
+});
+
+// CHANGING PASSWORD
+app.post('/api/change-password', (req, res) => {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+        return res.status(400).json({ error: 'Email, code, and new password are required.' });
+    }
+
+    const validateCodeQuery = 'SELECT * FROM customer_info WHERE email = ? AND verification_code = ?';
+
+    db.query(validateCodeQuery, [email, code], (err, results) => {
+        if (err) {
+            console.error('Error verifying code:', err.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(400).json({ error: 'Invalid verification code. Please try again.' });
+        }
+
+        const updatePasswordQuery = 'UPDATE customer_info SET password = ? WHERE email = ?';
+
+        db.query(updatePasswordQuery, [newPassword, email], (updateErr, updateResult) => {
+            if (updateErr) {
+                console.error('Error updating password:', updateErr.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+
+            res.status(200).json({ message: 'Password updated successfully' });
+        });
+    });
+});
 
 // TOKEN MIDDLEWARE DEFINITION
 const verifyToken = (req, res, next) => {
@@ -33,10 +145,9 @@ const verifyToken = (req, res, next) => {
 
 // CUSTOMER LOGIN
 app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-
-    const sql = 'SELECT customer_id, username FROM customer_info WHERE username = ? AND password = ?';
-    const values = [username, password];
+    const { identifier, password } = req.body;
+    const sql = 'SELECT customer_id, username, email FROM customer_info WHERE (username = ? OR email = ?) AND password = ?';
+    const values = [identifier, identifier, password];
 
     db.getConnection((err, connection) => {
         if (err) {
@@ -45,7 +156,7 @@ app.post('/api/login', (req, res) => {
         }
 
         connection.query(sql, values, (error, results) => {
-            connection.release(); 
+            connection.release();
 
             if (error) {
                 console.error('Login failed:', error.message);
@@ -79,31 +190,66 @@ app.post('/api/register', (req, res) => {
         password,
     } = req.body;
 
-    const sql = `
-        INSERT INTO customer_info
-        (firstName, middleName, lastName, email, contactNumber, username, password)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
+    const emailCheckQuery = 'SELECT COUNT(*) AS emailCount FROM customer_info WHERE email = ?';
+    const usernameCheckQuery = 'SELECT COUNT(*) AS usernameCount FROM customer_info WHERE username = ?';
 
-    const values = [firstName, middleName, lastName, email, contactNumber, username, password];
+    Promise.all([
+        new Promise((resolve, reject) => {
+            db.query(emailCheckQuery, [email], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results[0].emailCount);
+                }
+            });
+        }),
+        new Promise((resolve, reject) => {
+            db.query(usernameCheckQuery, [username], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results[0].usernameCount);
+                }
+            });
+        })
+    ])
+    .then(([emailCount, usernameCount]) => {
+        if (emailCount > 0) {
+            return res.status(400).json({ error: 'Email already exists. Please use a different email.' });
+        } else if (usernameCount > 0) {
+            return res.status(400).json({ error: 'Username already exists. Please choose a different username.' });
+        } else {
+            const sql = `
+                INSERT INTO customer_info
+                (firstName, middleName, lastName, email, contactNumber, username, password)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `;
 
-    db.getConnection((err, connection) => {
-        if (err) {
-            console.error('Error getting connection:', err.message);
-            return res.status(500).json({ error: 'Internal Server Error' });
+            const values = [firstName, middleName, lastName, email, contactNumber, username, password];
+
+            db.getConnection((err, connection) => {
+                if (err) {
+                    console.error('Error getting connection:', err.message);
+                    return res.status(500).json({ error: 'Internal Server Error' });
+                }
+
+                connection.query(sql, values, (error, results) => {
+                    connection.release();
+
+                    if (error) {
+                        console.error('Registration failed:', error.message);
+                        return res.status(500).json({ error: 'Internal Server Error' });
+                    }
+
+                    console.log('Registration successful:', results);
+                    res.status(201).json({ message: 'Registration successful' });
+                });
+            });
         }
-
-        connection.query(sql, values, (error, results) => {
-            connection.release(); 
-
-            if (error) {
-                console.error('Registration failed:', error.message);
-                return res.status(500).json({ error: 'Internal Server Error' });
-            }
-
-            console.log('Registration successful:', results);
-            res.status(201).json({ message: 'Registration successful' });
-        });
+    })
+    .catch((error) => {
+        console.error('Error checking email or username existence:', error.message);
+        return res.status(500).json({ error: 'Internal Server Error' });
     });
 });
 
@@ -123,7 +269,7 @@ app.get('/api/user', (req, res) => {
         const { userId, username } = decoded;
 
         const sql = 'SELECT * FROM customer_info WHERE customer_id = ?';
-        
+
         db.getConnection((err, connection) => {
             if (err) {
                 console.error('Error getting connection:', err.message);
@@ -131,7 +277,7 @@ app.get('/api/user', (req, res) => {
             }
 
             connection.query(sql, [userId], (error, results) => {
-                connection.release(); 
+                connection.release();
 
                 if (error || results.length === 0) {
                     console.error('Error fetching user information:', error ? error.message : 'User not found');
@@ -192,7 +338,7 @@ app.put('/api/update-profile', verifyToken, (req, res) => {
         }
 
         connection.query(updateProfileQuery, updateProfileValues, (updateError, updateResult) => {
-            connection.release(); 
+            connection.release();
 
             if (updateError) {
                 console.error('Error updating profile:', updateError.message);
@@ -297,7 +443,7 @@ app.get('/api/customers', (req, res) => {
         }
 
         connection.query(sql, (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Failed to retrieve customers_info:', queryError.message);
@@ -347,7 +493,7 @@ app.post('/api/add-vehicle', verifyToken, (req, res) => {
         }
 
         connection.query(sql, values, (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error adding a new vehicle:', queryError.message);
@@ -403,7 +549,7 @@ app.get('/api/user-vehicles', verifyToken, (req, res) => {
         }
 
         connection.query(sql, [userId], (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error fetching user vehicles:', queryError.message);
@@ -428,7 +574,7 @@ app.get('/api/services', (req, res) => {
         }
 
         connection.query(sql, (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error fetching services:', queryError.message);
@@ -462,7 +608,7 @@ app.post('/api/book-reservation', verifyToken, (req, res) => {
                 reservationQuery,
                 [customerId, selectedServiceId, selectedVehicleId, problemDescription, date, time],
                 (queryError, results) => {
-                    connection.release(); 
+                    connection.release();
 
                     if (queryError) {
                         console.error('Error booking reservation:', queryError.message);
@@ -507,7 +653,7 @@ app.get('/api/user-reservations', verifyToken, (req, res) => {
         }
 
         connection.query(sql, [userId], (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error fetching user reservations:', queryError.message);
@@ -548,7 +694,7 @@ app.get('/api/user-approved-reservations', verifyToken, (req, res) => {
         }
 
         connection.query(sql, [userId], (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error fetching user approved reservations:', queryError.message);
@@ -581,7 +727,7 @@ app.get('/api/vehicles-on-approved-reservations', verifyToken, (req, res) => {
         }
 
         connection.query(sql, [userId], (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error fetching vehicles on approved reservations:', queryError.message);
@@ -615,7 +761,7 @@ app.get('/api/pending-bills', verifyToken, (req, res) => {
         }
 
         connection.query(sql, [userId], (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error fetching pending bills:', queryError.message);
@@ -650,7 +796,7 @@ app.get('/api/payment-history', verifyToken, (req, res) => {
         }
 
         connection.query(sql, [userId], (queryError, results) => {
-            connection.release(); 
+            connection.release();
 
             if (queryError) {
                 console.error('Error fetching payment history:', queryError.message);

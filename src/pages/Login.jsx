@@ -6,7 +6,7 @@ import apiUrl from '../../apiUrl';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    identifier: '',
     password: '',
   });
 
@@ -25,21 +25,22 @@ const Login = () => {
     e.preventDefault();
   
     try {
-      const response = await axios.post(`${apiUrl}/api/login`, formData);
-      const { token } = response.data;
-      localStorage.setItem('token', token);
-      alert('Login successful!');
-      navigate('/main'); 
+        const response = await axios.post(`${apiUrl}/api/login`, formData);
+        const { token } = response.data;
+        localStorage.setItem('token', token);
+        alert('Login successful!');
+        navigate('/main'); 
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        setErrors({ general: 'Invalid username or password' });
-        alert('Invalid username or password. Please try again.');
-      } else {
-        console.error('Login failed:', error.message);
-        alert('An error occurred during login. Please try again.');
-      }
+        if (error.response && error.response.status === 401) {
+            setErrors({ general: 'Invalid username or password' });
+            alert('Invalid username or password. Please try again.');
+        } else {
+            console.error('Login failed:', error.message);
+            alert('An error occurred during login. Please try again.');
+        }
     }
-  };
+};
+
 
   return (
     <div className="login-container">
@@ -48,11 +49,11 @@ const Login = () => {
       <h2 className="login-heading">Login</h2>
       <form className="login-form" onSubmit={handleSubmit}>
         <div className="login-form-group">
-          <label className="login-label">Username:</label>
+          <label className="login-label">Username or Email:</label> 
           <input
             type="text"
-            name="username"
-            value={formData.username}
+            name="identifier"
+            value={formData.identifier} 
             onChange={handleChange}
             required
             className="login-input"
@@ -74,6 +75,7 @@ const Login = () => {
         {errors.general && <div className="login-error">{errors.general}</div>}
 
         <button type="submit" className="login-button">Login</button>
+        <p className="login-register-link">Forgot your password? <Link to="/forgot-password" className="login-link">Reset it here</Link></p>
         <p className="login-register-link">Don't have an account? <Link to="/register" className="login-link">Register</Link></p>
       </form>
     </div>
