@@ -1,11 +1,11 @@
 const mysql = require('mysql');
 
 const pool = mysql.createPool({
-    connectionLimit: 5,
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'auto_reservation_db',
+    connectionLimit: 10,
+    host: 'b9sxbycirx4uxfa6hy8i-mysql.services.clever-cloud.com',
+    user: 'unskwri0pshtw6x6',
+    password: '0GczO34KcOpMvIiOI57Q',
+    database: 'b9sxbycirx4uxfa6hy8i',
 });
 
 pool.getConnection((err, connection) => {

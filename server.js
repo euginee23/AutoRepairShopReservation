@@ -372,64 +372,92 @@ app.put('/api/change-login', verifyToken, (req, res) => {
             return res.status(400).json({ error: 'Invalid old password' });
         }
 
-        const updates = [];
+        // Check if the new username already exists
+        if (newUsername) {
+            const checkUsernameQuery = `
+                SELECT customer_id
+                FROM customer_info
+                WHERE username = ? AND customer_id != ?;
+            `;
 
-        db.getConnection((getConnectionError, connection) => {
-            if (getConnectionError) {
-                console.error('Error getting connection:', getConnectionError.message);
-                return res.status(500).json({ error: 'Internal Server Error' });
-            }
+            db.query(checkUsernameQuery, [newUsername, userId], (checkUsernameError, checkUsernameResult) => {
+                if (checkUsernameError) {
+                    console.error('Error checking username:', checkUsernameError.message);
+                    return res.status(500).json({ error: 'Internal Server Error' });
+                }
 
-            if (newUsername) {
-                const updateUsernameQuery = `
-                    UPDATE customer_info
-                    SET username = ?
-                    WHERE customer_id = ?;
-                `;
-                updates.push(
-                    new Promise((resolve, reject) => {
-                        connection.query(updateUsernameQuery, [newUsername, userId], (updateUsernameError, updateUsernameResult) => {
-                            if (updateUsernameError) {
-                                reject(updateUsernameError);
-                            } else {
-                                resolve(updateUsernameResult);
-                            }
-                        });
-                    })
-                );
-            }
+                if (checkUsernameResult.length > 0) {
+                    return res.status(409).json({ error: 'Username already exists' });
+                }
 
-            if (newPassword) {
-                const updatePasswordQuery = `
-                    UPDATE customer_info
-                    SET password = ?
-                    WHERE customer_id = ?;
-                `;
-                updates.push(
-                    new Promise((resolve, reject) => {
-                        connection.query(updatePasswordQuery, [newPassword, userId], (updatePasswordError, updatePasswordResult) => {
-                            if (updatePasswordError) {
-                                reject(updatePasswordError);
-                            } else {
-                                resolve(updatePasswordResult);
-                            }
-                        });
-                    })
-                );
-            }
-
-            Promise.all(updates)
-                .then(() => {
-                    connection.release();
-                    res.status(200).json({ message: 'Login details changed successfully' });
-                })
-                .catch((updateError) => {
-                    console.error('Error changing login details:', updateError.message);
-                    res.status(500).json({ error: 'Internal Server Error' });
-                });
-        });
+                // Proceed with updating the username and/or password
+                updateLoginDetails(newUsername, newPassword, userId, res);
+            });
+        } else {
+            // Proceed with updating the password only
+            updateLoginDetails(null, newPassword, userId, res);
+        }
     });
 });
+
+function updateLoginDetails(newUsername, newPassword, userId, res) {
+    const updates = [];
+    db.getConnection((getConnectionError, connection) => {
+        if (getConnectionError) {
+            console.error('Error getting connection:', getConnectionError.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        if (newUsername) {
+            const updateUsernameQuery = `
+                UPDATE customer_info
+                SET username = ?
+                WHERE customer_id = ?;
+            `;
+            updates.push(
+                new Promise((resolve, reject) => {
+                    connection.query(updateUsernameQuery, [newUsername, userId], (updateUsernameError, updateUsernameResult) => {
+                        if (updateUsernameError) {
+                            reject(updateUsernameError);
+                        } else {
+                            resolve(updateUsernameResult);
+                        }
+                    });
+                })
+            );
+        }
+
+        if (newPassword) {
+            const updatePasswordQuery = `
+                UPDATE customer_info
+                SET password = ?
+                WHERE customer_id = ?;
+            `;
+            updates.push(
+                new Promise((resolve, reject) => {
+                    connection.query(updatePasswordQuery, [newPassword, userId], (updatePasswordError, updatePasswordResult) => {
+                        if (updatePasswordError) {
+                            reject(updatePasswordError);
+                        } else {
+                            resolve(updatePasswordResult);
+                        }
+                    });
+                })
+            );
+        }
+
+        Promise.all(updates)
+            .then(() => {
+                connection.release();
+                res.status(200).json({ message: 'Login details changed successfully' });
+            })
+            .catch((updateError) => {
+                console.error('Error changing login details:', updateError.message);
+                res.status(500).json({ error: 'Internal Server Error' });
+            });
+    });
+}
+
 
 
 // RETRIEVE CUSTOMERS

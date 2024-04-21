@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../css/MainPageStyle.css';
 import apiUrl from '../../apiUrl';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 //HOME
 const HomeContent = () => {
@@ -161,9 +162,6 @@ const HomeContent = () => {
   );
 };
 
-
-
-
 //EDIT PROFILE CONTENT
 const ProfileSettingsContent = ({ userData, loading, error }) => {
   const [editedUserData, setEditedUserData] = useState({
@@ -204,18 +202,18 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
   const handleChangeLogin = async () => {
     try {
       if (!editedUserData.oldPassword) {
-        alert('Please enter the old password.');
+        Swal.fire('Error', 'Please enter the old password.', 'error');
         return;
       }
-
+  
       const newPassword = editedUserData.newPassword || editedUserData.oldPassword;
-
+  
       const loginData = {
         oldPassword: editedUserData.oldPassword,
         newPassword: newPassword,
         newUsername: editedUserData.username,
       };
-
+  
       const response = await axios.put(
         `${apiUrl}/api/change-login`,
         loginData,
@@ -225,17 +223,26 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
           },
         }
       );
-
+  
+      if (response.data.error === 'Username already exists') {
+        Swal.fire('Error', 'Username already exists.', 'error');
+        return;
+      }
+  
       setEditedUserData({
         ...editedUserData,
         oldPassword: '',
         newPassword: '',
       });
-
+  
       alert(response.data.message);
     } catch (error) {
-      console.error('Error changing login details:', error.response.data);
-      alert('An error occurred while changing the login details. Please try again.');
+      if (error.response && error.response.status === 401) {
+        Swal.fire('Error', 'Wrong password.', 'error');
+      } else {
+        console.error('Error changing login details:', error.response.data);
+        Swal.fire('Error', 'An error occurred while changing the login details. Please try again.', 'error');
+      }
     }
   };
 
@@ -395,7 +402,6 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
   );
 };
 
-//BOOK RESERVATION CONTENT
 const BookReservationContent = () => {
   const [reservationData, setReservationData] = useState({
     date: '',
@@ -407,6 +413,7 @@ const BookReservationContent = () => {
 
   const [userVehicles, setUserVehicles] = useState([]);
   const [services, setServices] = useState([]);
+  const [loadingBookReservation, setLoadingBookReservation] = useState(false); // Add loading state for booking reservation
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -417,16 +424,19 @@ const BookReservationContent = () => {
   };
 
   const handleBookReservation = async () => {
+    if (!reservationData.date || !reservationData.time || !reservationData.selectedServiceId || !reservationData.problemDescription || !reservationData.selectedVehicleId) {
+      alert('Please fill in all required fields before booking the reservation.');
+      return;
+    }
+
+    setLoadingBookReservation(true); // Set loading state for booking reservation
+
     try {
-      const response = await axios.post(
-        `${apiUrl}/api/book-reservation`,
-        reservationData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+      const response = await axios.post(`${apiUrl}/api/book-reservation`, reservationData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
 
       setReservationData({
         date: '',
@@ -436,10 +446,12 @@ const BookReservationContent = () => {
         selectedVehicleId: '',
       });
 
-      alert(response.data.message);
+      Swal.fire('Success', response.data.message, 'success');
     } catch (error) {
       console.error('Error booking reservation:', error.response.data);
-      alert('An error occurred while booking the reservation. Please try again.');
+      Swal.fire('Error', 'An error occurred while booking the reservation. Please try again.', 'error');
+    } finally {
+      setLoadingBookReservation(false); // Reset loading state for booking reservation
     }
   };
 
@@ -475,6 +487,11 @@ const BookReservationContent = () => {
 
   return (
     <div className="reservation-content">
+      {loadingBookReservation && (
+        <div className="loading-overlay">
+          <h1>Loading...</h1>
+        </div>
+      )}
       <div className="reservation-box">
         <h2>Book a Reservation</h2>
         <form>
@@ -534,8 +551,8 @@ const BookReservationContent = () => {
               ))}
             </select>
           </label>
-          <button type="button" onClick={handleBookReservation}>
-            Book Reservation
+          <button type="button" onClick={handleBookReservation} disabled={loadingBookReservation}>
+            {loadingBookReservation ? 'Booking...' : 'Book Reservation'}
           </button>
         </form>
       </div>
@@ -543,8 +560,12 @@ const BookReservationContent = () => {
   );
 };
 
+
 //YOUR VEHICLES CONTENT
 const YourVehiclesContent = () => {
+  const [loading, setLoading] = useState(false);
+  const [loadingAddVehicle, setLoadingAddVehicle] = useState(false);
+  const [loadingRemoveVehicle, setLoadingRemoveVehicle] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [newVehicle, setNewVehicle] = useState({
     make: '',
@@ -577,6 +598,8 @@ const YourVehiclesContent = () => {
       return;
     }
 
+    setLoadingAddVehicle(true); // Set loading state for adding vehicle
+
     try {
       const response = await axios.post(`${apiUrl}/api/add-vehicle`, newVehicle, {
         headers: {
@@ -600,6 +623,8 @@ const YourVehiclesContent = () => {
     } catch (error) {
       console.error('Error adding vehicle:', error.response.data);
       alert('An error occurred while adding the vehicle. Please try again.');
+    } finally {
+      setLoadingAddVehicle(false); // Reset loading state for adding vehicle
     }
   };
 
@@ -610,6 +635,8 @@ const YourVehiclesContent = () => {
       return;
     }
   
+    setLoadingRemoveVehicle(true); // Set loading state for removing vehicle
+
     try {
       await axios.delete(`${apiUrl}/api/remove-vehicle/${index}`, {
         headers: {
@@ -625,12 +652,15 @@ const YourVehiclesContent = () => {
     } catch (error) {
       console.error('Error removing vehicle:', error.response.data);
       alert('An error occurred while removing the vehicle. Please try again.');
+    } finally {
+      setLoadingRemoveVehicle(false); // Reset loading state for removing vehicle
     }
   };
 
   const carBrands = ['Isuzu', 'Mitsubishi', 'Toyota', 'Ford', 'Hyundai', 'Kia', 'Mazda', 'Nissan', 'Honda', 'Chevrolet', 'Mercedes-Benz', 'Jeep', 'Volvo'];
 
   const fetchUserVehicles = async () => {
+    setLoading(true); 
     try {
       const response = await axios.get(`${apiUrl}/api/user-vehicles`, {
         headers: {
@@ -639,9 +669,11 @@ const YourVehiclesContent = () => {
       });
 
       setVehicles(response.data);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching user vehicles:', error.message);
       alert('An error occurred while fetching user vehicles. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -651,6 +683,11 @@ const YourVehiclesContent = () => {
 
   return (
     <div className="vehicle-content">
+      {loading && (
+        <div className="loading-overlay">
+          <h1>Loading...</h1>
+        </div>
+      )}
       <div className="reservation-box">
         <h2>Your Vehicles</h2>
         <form>
@@ -734,8 +771,8 @@ const YourVehiclesContent = () => {
               onChange={handleChange}
             />
           </label>
-          <button type="button" onClick={handleAddVehicle}>
-            Add Vehicle
+          <button type="button" onClick={handleAddVehicle} disabled={loadingAddVehicle}>
+            {loadingAddVehicle ? 'Adding Vehicle...' : 'Add Vehicle'}
           </button>
         </form>
       </div>
@@ -759,8 +796,8 @@ const YourVehiclesContent = () => {
                       <br />
                       Plate Number: {vehicle.plate_number}
                       <br />
-                      <button type="button" onClick={() => handleRemoveVehicle(vehicle.vehicle_id)}>
-                        Remove
+                      <button type="button" onClick={() => handleRemoveVehicle(vehicle.vehicle_id)} disabled={loadingRemoveVehicle}>
+                        {loadingRemoveVehicle ? 'Removing...' : 'Remove'}
                       </button>
                     </li>
                   ))}
@@ -775,6 +812,7 @@ const YourVehiclesContent = () => {
     </div>
   );
 };
+
 
 // BILLS AND PAYMENT CONTENT
 const BillsPaymentContent = () => {
