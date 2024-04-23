@@ -1,11 +1,12 @@
-const mysql = require('mysql');
+const mysql = require('mysql2');
 
 const pool = mysql.createPool({
-    connectionLimit: 10,
-    host: 'b9sxbycirx4uxfa6hy8i-mysql.services.clever-cloud.com',
-    user: 'unskwri0pshtw6x6',
-    password: '0GczO34KcOpMvIiOI57Q',
-    database: 'b9sxbycirx4uxfa6hy8i',
+    connectionLimit: 15,
+    host: 'bwnqthzv2o6xaim43ak5-mysql.services.clever-cloud.com',
+    user: 'uizbrucd6hqnoq24',
+    password: 'IqG7YurypTxLS9Z3T2Z',
+    database: 'bwnqthzv2o6xaim43ak5',
+    port: '20995',
 });
 
 pool.getConnection((err, connection) => {
