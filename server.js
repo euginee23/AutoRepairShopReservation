@@ -190,6 +190,10 @@ app.post('/api/register', (req, res) => {
         password,
     } = req.body;
 
+    if (!firstName || !lastName || !email || !contactNumber || !username || !password) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
     const emailCheckQuery = 'SELECT COUNT(*) AS emailCount FROM customer_info WHERE email = ?';
     const usernameCheckQuery = 'SELECT COUNT(*) AS usernameCount FROM customer_info WHERE username = ?';
 
@@ -227,23 +231,14 @@ app.post('/api/register', (req, res) => {
 
             const values = [firstName, middleName, lastName, email, contactNumber, username, password];
 
-            db.getConnection((err, connection) => {
-                if (err) {
-                    console.error('Error getting connection:', err.message);
+            db.query(sql, values, (error, results) => {
+                if (error) {
+                    console.error('Registration failed:', error.message);
                     return res.status(500).json({ error: 'Internal Server Error' });
                 }
 
-                connection.query(sql, values, (error, results) => {
-                    connection.release();
-
-                    if (error) {
-                        console.error('Registration failed:', error.message);
-                        return res.status(500).json({ error: 'Internal Server Error' });
-                    }
-
-                    console.log('Registration successful:', results);
-                    res.status(201).json({ message: 'Registration successful' });
-                });
+                console.log('Registration successful:', results);
+                res.status(201).json({ message: 'Registration successful' });
             });
         }
     })
@@ -252,7 +247,6 @@ app.post('/api/register', (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
     });
 });
-
 
 // RETRIEVE USER INFORMATION BASED ON THE PROVIDED TOKEN
 app.get('/api/user', (req, res) => {

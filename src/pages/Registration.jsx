@@ -19,6 +19,7 @@ const Registration = () => {
 
     const [errors, setErrors] = useState({});
     const [backendError, setBackendError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -42,16 +43,25 @@ const Registration = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        setLoading(true);
+    
         try {
             await registrationValidationSchema.validate(formData, { abortEarly: false });
-
+    
             const response = await axios.post(`${apiUrl}/api/register`, formData);
             console.log('Registration successful:', response.data);
             alert('Registration successful!');
         } catch (error) {
-            if (error.response && error.response.status === 400) {
-                setBackendError(error.response.data.error);
+            if (error.response) {
+                if (error.response.status === 400) {
+                    setBackendError(error.response.data.error);
+                } else if (error.response.status === 401) {
+                    setBackendError('Unauthorized: Please check your credentials.');
+                } else if (error.response.status === 500) {
+                    setBackendError('Internal Server Error: Please try again later.');
+                } else {
+                    setBackendError('An unexpected error occurred. Please try again later.');
+                }
             } else if (error.name === 'ValidationError') {
                 const newErrors = {};
                 error.inner.forEach((e) => {
@@ -59,8 +69,11 @@ const Registration = () => {
                 });
                 setErrors(newErrors);
             } else {
-                console.error('Registration failed:', error.response.data);
+                console.error('Registration failed:', error);
+                setBackendError('An unexpected error occurred. Please try again later.');
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -164,14 +177,21 @@ const Registration = () => {
                     />
                 </div>
 
-                {Object.keys(errors).map((key) => (
-                    <div key={key} className="registration-error">
-                        {errors[key]}
-                    </div>
-                ))}
-                <button className="registration-button" type="submit">
-                    Register
-                </button>
+                {loading ? (
+                    <div>Registering...</div>
+                ) : (
+                    <>
+                        {Object.keys(errors).map((key) => (
+                            <div key={key} className="registration-error">
+                                {errors[key]}
+                            </div>
+                        ))}
+                        <button className="registration-button" type="submit">
+                            Register
+                        </button>
+                    </>
+                )}
+
                 <p className="login-register-link">Already have an account? <Link to="/" className="login-link">Login</Link></p>
             </form>
         </div>
