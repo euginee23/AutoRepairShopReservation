@@ -429,7 +429,7 @@ const BookReservationContent = () => {
       return;
     }
 
-    setLoadingBookReservation(true); // Set loading state for booking reservation
+    setLoadingBookReservation(true); 
 
     try {
       const response = await axios.post(`${apiUrl}/api/book-reservation`, reservationData, {
@@ -451,7 +451,7 @@ const BookReservationContent = () => {
       console.error('Error booking reservation:', error.response.data);
       Swal.fire('Error', 'An error occurred while booking the reservation. Please try again.', 'error');
     } finally {
-      setLoadingBookReservation(false); // Reset loading state for booking reservation
+      setLoadingBookReservation(false); 
     }
   };
 
@@ -911,7 +911,7 @@ const BillsPaymentContent = () => {
                 <p><span className="info-label">Extra Cost Reason:</span> <span className="info-value">{history.extraCost_reason}</span></p>
                 <p><span className="info-label">Extra Cost:</span> <span className="info-value">{history.extraCost}</span></p>
                 <p><span className="info-label">Total Cost:</span> <span className="info-value">{history.totalCost}</span></p>
-                <p><span className="info-label">Transaction Date and Time:</span> <span className="info-value">{formatDate(history.created_at)} {formatTime(history.created_at)}</span></p>
+                <p><span className="info-label">Transaction Date:</span> <span className="info-value">{formatDate(history.created_at)}</span></p>
                 <img src={`data:image/png;base64,${history.receipt_Image}`} alt="Receipt" style={{ maxWidth: '100%' }} />
               </li>
             ))}
