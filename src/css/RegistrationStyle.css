@@ -63,5 +63,36 @@
 }
 
 .registration-button:hover {
-    background-color: #45a049;
+    background-color: #3a633c;
+}
+
+/* Button styling */
+.send-code-button {
+    background-color: #ddc749;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.send-code-button:hover {
+    background-color: #38523a;
+}
+
+/* Button styling */
+.verify-code-button {
+    background-color: #4198c0;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.verify-code-button:hover {
+    background-color: #385239;
 }

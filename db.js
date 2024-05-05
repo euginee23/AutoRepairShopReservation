@@ -9,6 +9,14 @@ const pool = mysql.createPool({
     port: '20995',
 });
 
+/* const pool = mysql.createPool({
+    connectionLimit: 15,
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'auto_reservation_db',
+}); */
+
 pool.getConnection((err, connection) => {
     if (err) {
         console.error('MySQL connection error:', err.message);

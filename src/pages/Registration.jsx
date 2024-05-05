@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import registrationValidationSchema from '../validation/registrationValidation';
 import '../css/RegistrationStyle.css';
 import apiUrl from '../../apiUrl';
+import Swal from 'sweetalert2';
 
 const Registration = () => {
     const [formData, setFormData] = useState({
@@ -20,6 +21,20 @@ const Registration = () => {
     const [errors, setErrors] = useState({});
     const [backendError, setBackendError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const location = useLocation();
+    const { state } = location;
+    const { emailVerified, email } = state || {};
+
+    const navigate = useNavigate();
+    useEffect(() => {
+        if (emailVerified && email) {
+            setFormData((prevFormData) => ({
+                ...prevFormData,
+                email: email,
+            }));
+        }
+    }, [emailVerified, email]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -44,25 +59,24 @@ const Registration = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-    
         try {
             await registrationValidationSchema.validate(formData, { abortEarly: false });
     
-            const response = await axios.post(`${apiUrl}/api/register`, formData);
+            Swal.showLoading();
+    
+            const response = await axios.put(`${apiUrl}/api/register`, formData);
             console.log('Registration successful:', response.data);
-            alert('Registration successful!');
+    
+            Swal.fire({
+                icon: 'success',
+                title: 'Registration successful!',
+                showConfirmButton: false,
+                timer: 1500
+            });
+    
+            navigate('/');
         } catch (error) {
-            if (error.response) {
-                if (error.response.status === 400) {
-                    setBackendError(error.response.data.error);
-                } else if (error.response.status === 401) {
-                    setBackendError('Unauthorized: Please check your credentials.');
-                } else if (error.response.status === 500) {
-                    setBackendError('Internal Server Error: Please try again later.');
-                } else {
-                    setBackendError('An unexpected error occurred. Please try again later.');
-                }
-            } else if (error.name === 'ValidationError') {
+            if (error.name === 'ValidationError') {
                 const newErrors = {};
                 error.inner.forEach((e) => {
                     newErrors[e.path] = e.message;
@@ -76,7 +90,7 @@ const Registration = () => {
             setLoading(false);
         }
     };
-
+        
     return (
         <div className="registration-container">
             <form className="registration-form" onSubmit={handleSubmit}>
@@ -120,6 +134,7 @@ const Registration = () => {
                         value={formData.email}
                         onChange={handleChange}
                         onBlur={handleBlur}
+                        readOnly
                         required
                     />
                 </div>
@@ -189,6 +204,7 @@ const Registration = () => {
                         <button className="registration-button" type="submit">
                             Register
                         </button>
+                        
                     </>
                 )}
 

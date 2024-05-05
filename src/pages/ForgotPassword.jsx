@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import '../css/ForgotPasswordStyle.css';
 import apiUrl from '../../apiUrl';
+import Swal from 'sweetalert2';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +12,8 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [codeVerified, setCodeVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setEmail(e.target.value);
@@ -26,6 +29,7 @@ const ForgotPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const response = await axios.post(`${apiUrl}/api/send-code`, { email });
       setMessage(response.data.message);
@@ -37,12 +41,14 @@ const ForgotPassword = () => {
       } else {
         setError('An error occurred. Please try again later.');
       }
+    } finally {
+      setLoading(false);
     }
   }
   
-
   const handleCodeSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const response = await axios.post(`${apiUrl}/api/verify-code`, { email, code });
       if (response.status === 200) {
@@ -56,16 +62,28 @@ const ForgotPassword = () => {
     } catch (error) {
       setMessage('');
       setError('An error occurred. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const response = await axios.post(`${apiUrl}/api/change-password`, { email, code, newPassword });
       if (response.status === 200) {
         setMessage('Password reset successful!');
         setError('');
+        Swal.fire({
+          icon: 'success',
+          title: 'Password Reset Successful',
+          text: 'Your password has been reset successfully.',
+          timer: 1500, 
+          showConfirmButton: false
+        }).then(() => {
+          navigate('/');
+        });
       } else {
         setMessage('');
         setError('An error occurred while resetting your password. Please try again.');
@@ -73,6 +91,8 @@ const ForgotPassword = () => {
     } catch (error) {
       setMessage('');
       setError('An error occurred. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,7 +112,9 @@ const ForgotPassword = () => {
         </div>
         {message && <div className="forgot-password-success">{message}</div>}
         {error && <div className="forgot-password-error">{error}</div>}
-        <button type="submit" className="forgot-password-button">Reset Password</button>
+        <button type="submit" className="forgot-password-button" disabled={loading}>
+          {loading ? 'Sending, Please Wait...' : 'Send Reset Code'}
+        </button>
       </form>
       {message && !codeVerified && (
         <form className="forgot-password-form" onSubmit={handleCodeSubmit}>
@@ -106,7 +128,9 @@ const ForgotPassword = () => {
               className="forgot-password-input"
             />
           </div>
-          <button type="submit" className="forgot-password-button">Submit Code</button>
+          <button type="submit" className="forgot-password-button" disabled={loading}>
+            {loading ? 'Submitting, Please Wait...' : 'Submit Code'}
+          </button>
         </form>
       )}
       {codeVerified && (
@@ -121,7 +145,9 @@ const ForgotPassword = () => {
               className="forgot-password-input"
             />
           </div>
-          <button type="submit" className="forgot-password-button">Reset Password</button>
+          <button type="submit" className="forgot-password-button" disabled={loading}>
+            {loading ? 'Ressetting, Please Wait...' : 'Reset Password'}
+          </button>
         </form>
       )}
       <p className="forgot-password-login-link">Remembered your password? <Link to="/login" className="login-link">Login</Link></p>

@@ -4,6 +4,7 @@ import Registration from './pages/Registration';
 import Login from './pages/Login';
 import MainPage from './pages/MainPage';
 import ForgotPassword from './pages/ForgotPassword';
+import VerifyEmail from './pages/VerifyEmail';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/register" element={<Registration />} />
         <Route path="/main" element={<MainPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </Router>
   );

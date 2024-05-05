@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const db = require('./db');
+const pool = require('./db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const randomize = require('randomatic');
@@ -19,75 +20,77 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'molaveengineering@gmail.com',
-        pass: 'pser ukpk azel cafx', 
+        pass: 'pser ukpk azel cafx',
     },
 });
 
 // SENDING A 6-DIGIT CODE
-app.post('/api/send-code', (req, res) => {
+app.post('/api/send-code', async (req, res) => {
     const { email } = req.body;
-    const code = randomize('0', 6);
+    const verificationCode = Math.floor(100000 + Math.random() * 900000);
 
-    const emailCheckQuery = 'SELECT * FROM customer_info WHERE email = ?';
-    db.query(emailCheckQuery, [email], async (err, results) => {
-        if (err) {
-            console.error('Error checking email:', err.message);
-            return res.status(500).json({ error: 'Internal Server Error' });
+    db.query('SELECT * FROM customer_info WHERE email = ?', [email], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Internal server error' });
         }
 
         if (results.length === 0) {
-            return res.status(400).json({ error: 'There is no account registered with the entered Email. Please enter a valid Email.' });
+            return res.status(404).json({ error: 'Email does not exist' });
         }
 
         const mailOptions = {
-            from: 'MOLAVE ENGINEERING',
+            from: 'your_email@gmail.com',
             to: email,
-            subject: 'Password Reset Code',
-            text: `Your verification code is: ${code}`,
+            subject: 'Email Verification Code',
+            text: `Your verification code is: ${verificationCode}`,
         };
 
-        transporter.sendMail(mailOptions, async (error, info) => {
+        transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-                console.error('Error sending email:', error);
-                return res.status(500).json({ error: 'Failed to send code. Please try again later.' });
+                console.error(error);
+                return res.status(500).json({ error: 'Failed to send verification code' });
             }
+            console.log('Email sent: ' + info.response);
 
-            console.log('Email sent:', info.response);
+            const customer = {
+                email: email,
+                verification_code: verificationCode,
+            };
 
-            try {
-                const sql = 'UPDATE customer_info SET verification_code = ? WHERE email = ?';
-                await db.query(sql, [code, email]);
-                console.log('Verification code stored in the database:', code);
-                res.status(200).json({ message: 'Code sent successfully.', code });
-            } catch (updateError) {
-                console.error('Error storing verification code:', updateError.message);
-                res.status(500).json({ error: 'Internal Server Error' });
-            }
+            db.query('UPDATE customer_info SET verification_code = ? WHERE email = ?', [verificationCode, email], (error, results) => {
+                if (error) {
+                    console.error(error);
+                    return res.status(500).json({ error: 'Failed to update verification code' });
+                }
+                console.log('Verification code updated in the database');
+                return res.status(200).json({ message: 'Verification code sent successfully' });
+            });
         });
     });
 });
 
-
 // VERIFYING THE CODE SENT
-app.post('/api/verify-code', (req, res) => {
+app.post('/api/verify-code', async (req, res) => {
     const { email, code } = req.body;
 
-    if (!email || !code) {
-        return res.status(400).json({ error: 'Email and code are required.' });
-    }
-    const sql = 'SELECT * FROM customer_info WHERE email = ? AND verification_code = ?';
-    db.query(sql, [email, code], (err, results) => {
-        if (err) {
-            console.error('Error verifying code:', err.message);
-            return res.status(500).json({ error: 'Internal Server Error' });
-        }
+    db.query(
+        'SELECT * FROM customer_info WHERE email = ? AND verification_code = ?',
+        [email, code],
+        (error, results) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ error: 'Internal server error' });
+            }
 
-        if (results.length === 0) {
-            return res.status(400).json({ error: 'Invalid verification code. Please try again.' });
-        }
+            if (results.length === 0) {
+                return res.status(400).json({ error: 'Invalid email or verification code' });
+            }
 
-        res.status(200).json({ message: 'Verification code is valid.' });
-    });
+            console.log('Code verification successful');
+            return res.status(200).json({ message: 'Code verification successful' });
+        }
+    );
 });
 
 // CHANGING PASSWORD
@@ -179,7 +182,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // CUSTOMER REGISTRATION
-app.post('/api/register', (req, res) => {
+app.put('/api/register', (req, res) => {
     const {
         firstName,
         middleName,
@@ -194,59 +197,116 @@ app.post('/api/register', (req, res) => {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const emailCheckQuery = 'SELECT COUNT(*) AS emailCount FROM customer_info WHERE email = ?';
-    const usernameCheckQuery = 'SELECT COUNT(*) AS usernameCount FROM customer_info WHERE username = ?';
+    const emailCheckQuery = 'SELECT * FROM customer_info WHERE email = ?';
 
-    Promise.all([
-        new Promise((resolve, reject) => {
-            db.query(emailCheckQuery, [email], (error, results) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(results[0].emailCount);
-                }
-            });
-        }),
-        new Promise((resolve, reject) => {
-            db.query(usernameCheckQuery, [username], (error, results) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(results[0].usernameCount);
-                }
-            });
-        })
-    ])
-    .then(([emailCount, usernameCount]) => {
-        if (emailCount > 0) {
-            return res.status(400).json({ error: 'Email already exists. Please use a different email.' });
-        } else if (usernameCount > 0) {
-            return res.status(400).json({ error: 'Username already exists. Please choose a different username.' });
-        } else {
-            const sql = `
-                INSERT INTO customer_info
-                (firstName, middleName, lastName, email, contactNumber, username, password)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `;
-
-            const values = [firstName, middleName, lastName, email, contactNumber, username, password];
-
-            db.query(sql, values, (error, results) => {
-                if (error) {
-                    console.error('Registration failed:', error.message);
-                    return res.status(500).json({ error: 'Internal Server Error' });
-                }
-
-                console.log('Registration successful:', results);
-                res.status(201).json({ message: 'Registration successful' });
-            });
+    db.query(emailCheckQuery, [email], (error, results) => {
+        if (error) {
+            console.error('Error checking email existence:', error.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
-    })
-    .catch((error) => {
-        console.error('Error checking email or username existence:', error.message);
-        return res.status(500).json({ error: 'Internal Server Error' });
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Email not found. Please register instead.' });
+        }
+
+        const sql = `
+            UPDATE customer_info
+            SET firstName = ?, middleName = ?, lastName = ?, contactNumber = ?, username = ?, password = ?
+            WHERE email = ?
+        `;
+
+        const values = [firstName, middleName, lastName, contactNumber, username, password, email];
+
+        db.query(sql, values, (updateError, updateResults) => {
+            if (updateError) {
+                console.error('Registration failed:', updateError.message);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+
+            console.log('Registration successful:', updateResults);
+            res.status(200).json({ message: 'Registration successful' });
+        });
     });
 });
+
+// EMAIL SEND CODE REGISTRATION VERIFICATION
+app.post('/api/send-verification-code', (req, res) => {
+    const { email } = req.body;
+    const verificationCode = Math.floor(100000 + Math.random() * 900000);
+
+    db.query('SELECT * FROM customer_info WHERE email = ?', [email], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (results.length > 0) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+
+        const mailOptions = {
+            from: 'your_email@gmail.com',
+            to: email,
+            subject: 'Email Verification Code',
+            text: `Your verification code is: ${verificationCode}`,
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ error: 'Failed to send verification code' });
+            }
+            console.log('Email sent: ' + info.response);
+
+            const customer = {
+                email: email,
+                verification_code: verificationCode,
+            };
+
+            db.query('INSERT INTO customer_info SET ?', customer, (error, results) => {
+                if (error) {
+                    console.error(error);
+                    return res.status(500).json({ error: 'Failed to save verification code' });
+                }
+                console.log('Verification code saved to database');
+                return res.status(200).json({ message: 'Verification code sent successfully' });
+            });
+        });
+    });
+});
+
+// EMAIL REGISTRATION CODE VERIFICATION
+app.post('/api/verify-verification-code', (req, res) => {
+    const { email, code } = req.body;
+
+    db.query(
+        'SELECT * FROM customer_info WHERE email = ? AND verification_code = ?',
+        [email, code],
+        (error, results) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ error: 'Internal server error' });
+            }
+
+            if (results.length === 0) {
+                return res.status(400).json({ error: 'Invalid email or verification code' });
+            }
+            db.query(
+                'UPDATE customer_info SET is_verified = 1 WHERE email = ? AND verification_code = ?',
+                [email, code],
+                (error, updateResults) => {
+                    if (error) {
+                        console.error(error);
+                        return res.status(500).json({ error: 'Failed to update verification status' });
+                    }
+                    console.log('Email verification successful');
+                    return res.status(200).json({ message: 'Email verification successful' });
+                }
+            );
+        }
+    );
+});
+
 
 // RETRIEVE USER INFORMATION BASED ON THE PROVIDED TOKEN
 app.get('/api/user', (req, res) => {
@@ -366,7 +426,6 @@ app.put('/api/change-login', verifyToken, (req, res) => {
             return res.status(400).json({ error: 'Invalid old password' });
         }
 
-        // Check if the new username already exists
         if (newUsername) {
             const checkUsernameQuery = `
                 SELECT customer_id
@@ -659,6 +718,7 @@ app.get('/api/user-reservations', verifyToken, (req, res) => {
                customer_vehicles.model as vehicle_model,
                customer_vehicles.year as vehicle_year,
                reservations.problem_description,
+               reservations.message,
                reservations.status
         FROM reservations
         INNER JOIN services ON reservations.service_id = services.service_id

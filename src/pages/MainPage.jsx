@@ -107,6 +107,9 @@ const HomeContent = () => {
                 <p><span className="info-label">Vehicle:</span> <span className="info-value">{reservation.vehicle_make} {reservation.vehicle_model} ({reservation.vehicle_year})</span></p>
                 <p><span className="info-label">Problem Description:</span> <span className="info-value">{reservation.problem_description}</span></p>
                 <p><span className="info-label">Status:</span> <span className="info-value" style={{ color: getStatusColor(reservation.status) }}>{reservation.status}</span></p>
+                {(reservation.status === 'Declined' || reservation.status === 'Cancelled') && (
+                  <p><span className="info-label">Message:</span> <span className="info-value" style={{ color: getStatusColor(reservation.message) }}>{reservation.message}</span></p>
+                )}
               </div>
             ))}
           </ul>
@@ -129,6 +132,9 @@ const HomeContent = () => {
                 <p><span className="info-label">Vehicle:</span> <span className="info-value">{approvedReservation.vehicle_make} {approvedReservation.vehicle_model} ({approvedReservation.vehicle_year})</span></p>
                 <p><span className="info-label">Problem Description:</span> <span className="info-value">{approvedReservation.problem_description}</span></p>
                 <p><span className="info-label">Status:</span> <span className="info-value" style={{ color: getStatusColor(approvedReservation.status) }}>{approvedReservation.status}</span></p>
+                {(approvedReservation.status === 'Declined' || approvedReservation.status === 'Cancelled') && (
+                  <p><span className="info-label">Message:</span> <span className="info-value" style={{ color: getStatusColor(approvedReservation.message) }}>{approvedReservation.message}</span></p>
+                )}
               </div>
             ))}
           </ul>
@@ -138,7 +144,7 @@ const HomeContent = () => {
       </div>
 
       <div className="reservation-box">
-        <h2 className="reservation-box-title">Your vehicles that is currently being worked on</h2>
+        <h2 className="reservation-box-title">Your vehicles that are currently being worked on</h2>
         {vehiclesOnApprovedReservations.length > 0 ? (
           <ul>
             {vehiclesOnApprovedReservations.map((vehicle) => (
@@ -161,6 +167,7 @@ const HomeContent = () => {
     </div>
   );
 };
+
 
 //EDIT PROFILE CONTENT
 const ProfileSettingsContent = ({ userData, loading, error }) => {
@@ -205,15 +212,15 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
         Swal.fire('Error', 'Please enter the old password.', 'error');
         return;
       }
-  
+
       const newPassword = editedUserData.newPassword || editedUserData.oldPassword;
-  
+
       const loginData = {
         oldPassword: editedUserData.oldPassword,
         newPassword: newPassword,
         newUsername: editedUserData.username,
       };
-  
+
       const response = await axios.put(
         `${apiUrl}/api/change-login`,
         loginData,
@@ -223,18 +230,18 @@ const ProfileSettingsContent = ({ userData, loading, error }) => {
           },
         }
       );
-  
+
       if (response.data.error === 'Username already exists') {
         Swal.fire('Error', 'Username already exists.', 'error');
         return;
       }
-  
+
       setEditedUserData({
         ...editedUserData,
         oldPassword: '',
         newPassword: '',
       });
-  
+
       alert(response.data.message);
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -429,7 +436,7 @@ const BookReservationContent = () => {
       return;
     }
 
-    setLoadingBookReservation(true); 
+    setLoadingBookReservation(true);
 
     try {
       const response = await axios.post(`${apiUrl}/api/book-reservation`, reservationData, {
@@ -451,7 +458,7 @@ const BookReservationContent = () => {
       console.error('Error booking reservation:', error.response.data);
       Swal.fire('Error', 'An error occurred while booking the reservation. Please try again.', 'error');
     } finally {
-      setLoadingBookReservation(false); 
+      setLoadingBookReservation(false);
     }
   };
 
@@ -586,29 +593,65 @@ const YourVehiclesContent = () => {
   };
 
   const handleAddVehicle = async () => {
-    if (
-      newVehicle.make.trim() === '' ||
-      newVehicle.model.trim() === '' ||
-      newVehicle.year.trim() === '' ||
-      newVehicle.mileage.trim() === '' ||
-      newVehicle.vehicleType.trim() === '' ||
-      newVehicle.plateNumber.trim() === ''
-    ) {
-      alert('Please fill in all required fields before adding a new vehicle.');
+    if (newVehicle.make.trim() === '') {
+      alert('Please select a car brand.');
       return;
     }
-
-    setLoadingAddVehicle(true); // Set loading state for adding vehicle
-
+  
+    if (newVehicle.model.trim() === '') {
+      alert('Please enter the model.');
+      return;
+    }
+  
+    if (newVehicle.year.trim() === '') {
+      alert('Please select a year.');
+      return;
+    }
+  
+    if (newVehicle.mileage.trim() === '') {
+      alert('Please drag the mileage slider.');
+      return;
+    }
+  
+    if (newVehicle.vehicleType.trim() === '') {
+      alert('Please select the vehicle type.');
+      return;
+    }
+  
+    if (newVehicle.plateNumber.trim() === '') {
+      alert('Please enter the plate number.');
+      return;
+    }
+  
+    if (newVehicle.plateNumber.length !== 7) {
+      alert('Plate number should be 7 characters long.');
+      return;
+    }
+  
+    const plateCode = newVehicle.plateNumber.substring(0, 3);
+    const plateNumber = newVehicle.plateNumber.substring(3);
+  
+    if (!/^[A-Za-z]+$/.test(plateCode)) {
+      alert('Plate code should contain only letters.');
+      return;
+    }
+  
+    if (!/^\d+$/.test(plateNumber)) {
+      alert('Plate number should contain only numbers.');
+      return;
+    }
+  
+    setLoadingAddVehicle(true); 
+  
     try {
       const response = await axios.post(`${apiUrl}/api/add-vehicle`, newVehicle, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-
+  
       setVehicles([...vehicles, newVehicle]);
-
+  
       setNewVehicle({
         make: '',
         model: '',
@@ -618,23 +661,23 @@ const YourVehiclesContent = () => {
         vehicleType: '',
         plateNumber: '',
       });
-
+  
       alert(response.data.message, 'vehicle added!');
     } catch (error) {
       console.error('Error adding vehicle:', error.response.data);
       alert('An error occurred while adding the vehicle. Please try again.');
     } finally {
-      setLoadingAddVehicle(false); // Reset loading state for adding vehicle
+      setLoadingAddVehicle(false); 
     }
   };
 
   const handleRemoveVehicle = async (index) => {
     const isConfirmed = window.confirm('Are you sure you want to remove this vehicle?');
-  
+
     if (!isConfirmed) {
       return;
     }
-  
+
     setLoadingRemoveVehicle(true); // Set loading state for removing vehicle
 
     try {
@@ -643,7 +686,7 @@ const YourVehiclesContent = () => {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-  
+
       const updatedVehicles = [...vehicles];
       updatedVehicles.splice(index, 1);
       setVehicles(updatedVehicles);
@@ -658,9 +701,10 @@ const YourVehiclesContent = () => {
   };
 
   const carBrands = ['Isuzu', 'Mitsubishi', 'Toyota', 'Ford', 'Hyundai', 'Kia', 'Mazda', 'Nissan', 'Honda', 'Chevrolet', 'Mercedes-Benz', 'Jeep', 'Volvo'];
+  const yearRange = Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => new Date().getFullYear() - i);
 
   const fetchUserVehicles = async () => {
-    setLoading(true); 
+    setLoading(true);
     try {
       const response = await axios.get(`${apiUrl}/api/user-vehicles`, {
         headers: {
@@ -717,21 +761,31 @@ const YourVehiclesContent = () => {
           </label>
           <label>
             Year:
-            <input
-              type="text"
+            <select
               name="year"
               value={newVehicle.year}
               onChange={handleChange}
-            />
+            >
+              <option value="" disabled>Select a year</option>
+              {yearRange.map((year, index) => (
+                <option key={index} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Mileage:
             <input
-              type="text"
+              type="range"
               name="mileage"
+              min="0"
+              max="1000000"
+              step="1000"
               value={newVehicle.mileage}
               onChange={handleChange}
             />
+            <h3>{newVehicle.mileage} km</h3>
           </label>
           <label>
             Fuel Type:
@@ -751,26 +805,42 @@ const YourVehiclesContent = () => {
               value={newVehicle.vehicleType}
               onChange={handleChange}
             >
-              <option value="" disabled>Select a vehicle type</option>
+              <option value="">Select a vehicle type</option>
               <option value="Sedan">Sedan</option>
               <option value="Hatchback">Hatchback</option>
-              <option value="SUV">SUV</option>
-              <option value="Crossover">Crossover</option>
+              <option value="Pick Up">Pick Up</option>
               <option value="Commercial Truck">Commercial Truck</option>
               <option value="Commercial Van">Commercial Van</option>
               <option value="Passenger Van">Passenger Van</option>
-              <option value="Jeep">Jeep</option>
+              <option value="Crossover">Crossover</option>
+              <option value="SUV">SUV</option>
+              <option value="Jeep / Off Roader">Jeep / Off Roader</option>
             </select>
           </label>
-          <label>
-            Plate Number:
-            <input
-              type="text"
-              name="plateNumber"
-              value={newVehicle.plateNumber}
-              onChange={handleChange}
-            />
-          </label>
+          <label>Plate Information:</label>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <label style={{ marginRight: '20px' }}>
+              Code:
+              <input
+                type="text"
+                name="plateCode"
+                value={newVehicle.plateNumber.substring(0, 3)} 
+                onChange={(e) => handleChange({ target: { name: 'plateNumber', value: e.target.value.toUpperCase() + newVehicle.plateNumber.substring(3) } })}
+                maxLength="3"
+                style={{ textTransform: 'uppercase' }}
+              />
+            </label>
+            <label>
+              Number:
+              <input
+                type="text"
+                name="plateNumber"
+                value={newVehicle.plateNumber.substring(3)} 
+                onChange={(e) => handleChange({ target: { name: 'plateNumber', value: newVehicle.plateNumber.substring(0, 3) + e.target.value } })} 
+                maxLength="4"
+              />
+            </label>
+          </div>
           <button type="button" onClick={handleAddVehicle} disabled={loadingAddVehicle}>
             {loadingAddVehicle ? 'Adding Vehicle...' : 'Add Vehicle'}
           </button>

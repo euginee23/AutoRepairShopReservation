@@ -36,7 +36,7 @@ const Login = () => {
         icon: 'success',
         title: 'Login successful!',
         showConfirmButton: false,
-        timer: 1500, // Automatically close after 1.5 seconds
+        timer: 1500, 
       }).then(() => {
         navigate('/main');
       });
@@ -110,7 +110,7 @@ const Login = () => {
         </p>
         <p className="login-register-link">
           Don't have an account?{' '}
-          <Link to="/register" className="login-link">
+          <Link to="/verify-email" className="login-link">
             Register
           </Link>
         </p>
